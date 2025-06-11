@@ -1,8 +1,23 @@
 import { Response } from 'express';
-import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
+
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  Post,
+  Res,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 import { GeminiService } from './gemini.service';
 import { BasicPromptDto } from './dtos';
+
+//* FilesInterceptor) es un interceptor de NestJS que permite manejar archivos subidos en una solicitud HTTP.
+//* Este interceptor se utiliza para procesar archivos subidos a través de un formulario o una solicitud multipart/form-data.
+//* @UploadedFiles() es un decorador que se utiliza para acceder a los archivos subidos en la solicitud.
+//* FilesInterceptor y permite obtener el archivo subido como un objeto Express.Multer.File.
 
 @Controller('gemini')
 export class GeminiController {
@@ -13,10 +28,15 @@ export class GeminiController {
     return this.geminiService.basicPrompt(basicPromptDto);
   }
   @Post('basic-prompt-stream')
+  @UseInterceptors(FilesInterceptor('files'))
   async basicPromptStream(
     @Body() basicPromptDto: BasicPromptDto,
     @Res() res: Response,
+    @UploadedFiles() files: Array<Express.Multer.File>,
   ) {
+    //* Se asigna el array de archivos subidos al DTO de BasicPromptDto.
+    basicPromptDto.files = files;
+
     //* Devuelve un stream de respuesta generada por el modelo de Gemini
     const stream = await this.geminiService.basicPromptStream(basicPromptDto);
 
