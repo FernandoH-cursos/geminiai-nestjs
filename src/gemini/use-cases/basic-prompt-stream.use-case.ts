@@ -4,12 +4,13 @@ import {
   GoogleGenAI,
 } from '@google/genai';
 import { BasicPromptDto } from '../dtos';
+import { geminiUploadFiles } from '../helpers';
 
 interface Options {
   model?: string;
   systemInstruction?: string;
 }
-//* Método para generar conteneido con stream utilizando el modelo Gemini 2.0 Flash.
+//* Método para generar contenido con stream utilizando el modelo Gemini 2.0 Flash.
 /*
  * generateContentStream() permite enviar un prompt y recibir una respuesta generada por el modelo en formato de stream.
  * Devuelve un AsyncGenerator<GenerateContentResponse, any, any> lo que significa que se puede iterar sobre la respuesta a medida
@@ -17,8 +18,6 @@ interface Options {
  * Lo que devuelve se le conoce como un "stream" de respuesta, ya que se puede ir recibiendo en partes a medida que el modelo
  * genera la respuesta.
  *
- * ai.files.upload() se utiliza para subir archivos al modelo, como imágenes o documentos, y obtener su URI y tipo MIME.
- 
  * createPartFromUri() se utiliza para crear una parte de contenido a partir de un URI y un tipo MIME, lo que permite incluir
  * archivos en la solicitud de generación de contenido.
  
@@ -41,17 +40,8 @@ export const basicPromptStreamUseCase = async (
     }),
   }); */
 
-  //* Si se envían múltiples archivos, se suben todos y se crean partes de contenido para cada uno.
-  //* new Blob() se utiliza para crear un objeto Blob a partir del buffer del archivo, especificando el tipo MIME adecuado.
-  const images = await Promise.all(
-    files.map((file) => {
-      return ai.files.upload({
-        file: new Blob([file.buffer], {
-          type: file.mimetype.includes('image') ? file.mimetype : 'image/jpg',
-        }),
-      });
-    }),
-  );
+  const images = await geminiUploadFiles(ai, files);
+  // console.log(JSON.stringify({ images }, null, 2));
 
   const {
     model = 'gemini-2.0-flash',
@@ -80,7 +70,6 @@ export const basicPromptStreamUseCase = async (
       systemInstruction,
     },
   });
-  console.log(JSON.stringify({ images }, null, 2));
 
   return response;
 };
